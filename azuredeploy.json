@@ -1,0 +1,191 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "EnvironmentName": {
+      "type": "string",
+      "defaultValue": "dev"
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "CorsAllowedOrigin": {
+      "type": "string",
+      "defaultValue": "*"
+    },
+    "CorsAllowedOriginLocal": {
+      "type": "string",
+      "defaultValue": "http://localhost:4200"
+    },
+    "scexport-doclink-api-planName": {
+      "type": "string",
+      "defaultValue": "concat('screcognition-api-', parameters('EnvironmentName'))"
+    },
+    "SiteCode": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "baseUri": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "DocLinkUserName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "DocLinkPassword": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "machineName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "APPINSIGHTS_INSTRUMENTATIONKEY": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "EventGridEndPoint": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "EventGridTopicKey": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "PwdAuthKey": {
+      "type": "string",
+      "defaultValue": ""
+    }
+  },
+  "variables": {
+    "scexport-doclink-funApp-Name": "[concat('scexport-handler-', parameters('EnvironmentName'))]",
+    "scexport-doclink-api-planName": "[parameters('scexport-doclink-api-planName')]",
+    "scexport-doclink-api-Name": "[concat('scexport-doclink-api-', parameters('EnvironmentName'))]",
+    "applicationInsightsName": "[concat('scexport-insights-', parameters('EnvironmentName'))]",
+    "eventGridTopicName": "[concat('scbasic-', parameters('EnvironmentName'))]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2018-05-01-preview",
+      "name": "[variables('applicationInsightsName')]",
+      "type": "microsoft.insights/components",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', variables('applicationInsightsName'))]": "Resource"
+      },
+      "properties": {
+        "ApplicationId": "[variables('applicationInsightsName')]",
+        "Request_Source": "IbizaWebAppExtensionCreate"
+      }
+    },
+    {
+      "name": "[variables('scexport-doclink-api-Name')]",
+      "type": "Microsoft.Web/sites",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-08-01",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', variables('applicationInsightsName'))]"
+      ],
+      "tags": {
+        "[concat('hidden-related:', resourceId('Microsoft.Web/serverfarms', variables('scexport-doclink-api-planName')))]": "Resource",
+        "displayName": "[variables('scexport-doclink-api-Name')]"
+      },
+      "properties": {
+        "name": "[variables('scexport-doclink-api-Name')]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('scexport-doclink-api-planName'))]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('microsoft.insights/components/', variables('applicationInsightsName')), '2015-05-01').InstrumentationKey]"
+            }
+          ],
+          "cors": {
+            "allowedOrigins": [
+              "[parameters('CorsAllowedOrigin')]",
+              "[parameters('CorsAllowedOriginLocal')]"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('scexport-doclink-funApp-Name')]",
+      "type": "Microsoft.Web/sites",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-08-01",
+      "kind": "functionapp",
+      "dependsOn": [
+        "[resourceId('microsoft.insights/components', variables('applicationInsightsName'))]"
+      ],
+      "tags": {
+        "[concat('hidden-related:', resourceId('Microsoft.Web/serverfarms', variables('scexport-doclink-api-planName')))]": "Resource",
+        "displayName": "[variables('scexport-doclink-funApp-Name')]"
+      },
+      "properties": {
+        "name": "[variables('scexport-doclink-funApp-Name')]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('scexport-doclink-api-planName'))]",
+        "siteConfig": {
+          "alwaysOn": true,
+          "cors": {
+            "allowedOrigins": [
+              "[parameters('CorsAllowedOrigin')]",
+              "[parameters('CorsAllowedOriginLocal')]"
+            ]
+          },
+          "appSettings": [
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('microsoft.insights/components/', variables('applicationInsightsName')), '2015-05-01').InstrumentationKey]"
+            },
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "~1"
+            },
+            {
+              "name": "WEBSITE_NODE_DEFAULT_VERSION",
+              "value": "8.11.1"
+            },
+            {
+              "name": "baseUri",
+              "value": "[parameters('baseUri')]"
+            },
+            {
+              "name": "DocLinkUserName",
+              "value": "[parameters('DocLinkUserName')]"
+            },
+            {
+              "name": "DocLinkPassword",
+              "value": "[parameters('DocLinkPassword')]"
+            },
+            {
+              "name": "machineName",
+              "value": "[parameters('machineName')]"
+            },
+            {
+              "name": "EventGridEndPoint",
+              "value": "[parameters('EventGridEndPoint')]"
+            },
+            {
+              "name": "EventGridTopicKey",
+              "value": "[parameters('EventGridTopicKey')]"
+            },
+            {
+              "name": "PwdAuthKey",
+              "value": "[parameters('PwdAuthKey')]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "[variables('eventGridTopicName')]",
+      "type": "Microsoft.EventGrid/topics",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2018-01-01"
+    }
+  ],
+  "outputs": {}
+}

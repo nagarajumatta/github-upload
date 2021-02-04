@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "TenantName": {
+      "value": "tenant02_1"
+    },
+    "location": {
+      "value": "centralus"
+    },
+    "HTTP_1_uri": {
+      "value": "https://screcognition-handler-dev.azurewebsites.net/api/GetImportConfig?code=xq5uWikVV67ykTii3tPbvmcl7HG51YJompanT4CobNzZB04JjOSAzA=="
+    },
+    "HTTP_2_uri": {
+      "value": "https://screcognition-handler-dev.azurewebsites.net/api/SaveNewFiles?code=5sR4J6OZZmh60mlsHt7q6PqWk3OeHse/p/zi5yVCHRuYZ9VLLsjCVA=="
+    },
+    "SiteCode": {
+      "value": "SMTCAP2"
+    },
+    "gmail_Connection_Name_1": {
+      "value": "smartcapture.altec.tenant02@gmail.com"
+    }
+  }
+}
